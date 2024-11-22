@@ -19,7 +19,7 @@ class User(db.Model):
         }
 
 class Planet(db.Model):
-    __tablename__ = 'planet'
+    #__tablename__ = 'planet'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(250), nullable=False)
     population = db.Column(db.Integer)
@@ -50,9 +50,10 @@ class People(db.Model):
         return {
             "id": self.id,
             "name": self.name,
-            "planet": self.planet.serialize if self.planet != None else "Unknown"
+            "age": self.age,
+            "zodiac": self.zodiac
         }
-
+    
 class Favorite(db.Model):
     __tablename__ = 'favorite'
     id = db.Column(db.Integer, primary_key=True)
@@ -66,12 +67,16 @@ class Favorite(db.Model):
     planet = db.relationship(Planet)
 
     def __repr__(self):
-        return '<Favorite %r>' % self.name
+      #return '<Favorite %r>' % self.name
+      return f'<Favorite {self.id}>'
 
     def serialize(self):
         return {
             "id": self.id,
-            "user": self.user,
-            "planet": self.planet.serialize if self.planet != None else "Unknown",
-            "people": self.planet.serialize if self.people != None else "Unknown"
+            "user": self.user.serialize() if self.user != None else "Unknown",
+            "planet": self.planet.serialize() if self.planet != None else "Unknown",
+            "people": self.people.serialize() if self.people != None else "Unknown"
         }
+
+
+
