@@ -120,6 +120,67 @@ def add_fav_planet(planet_id):
 
     return jsonify(new_favorite.serialize()), 201
 
+@app.route('/favorite/planet/<int:planet_id>', methods=['DELETE'])
+def delete_fav_planet(planet_id):
+    body = request.json
+    email = body.get("email")
+    user = User.query.filter_by(email=email).one_or_none()
+    if user == None:
+        return jsonify({"msg" : "User doesn't exist"}), 404
+    
+    planet = Planet.query.get(planet_id)
+    if planet == None:
+        return jsonify({"msg" : "Planet doesn't exist"}), 404
+    
+    favorite_delete = Favorite.query.filter_by(user_id=user.id,planet_id=planet.id).first()
+    if favorite_delete == None:
+        return jsonify({"msg" : "Favorite doesn't exist"}), 404
+    db.session.delete(favorite_delete)
+    db.session.commit()
+
+    return jsonify({"msg" : "Favorite successfully deleted"}), 201
+
+@app.route('/favorite/people/<int:people_id>', methods=['POST'])
+def add_fav_people(people_id):
+    body = request.json
+    email = body.get("email")
+    user = User.query.filter_by(email=email).one_or_none()
+    if user == None:
+        return jsonify({"msg" : "User doesn't exist"}), 404
+    
+    people = People.query.get(people_id)
+    if people == None:
+        return jsonify({"msg" : "People doesn't exist"}), 404
+    
+    new_favorite = Favorite(
+        user_id = user.id,
+        people_id = people_id
+        )
+    db.session.add(new_favorite)
+    db.session.commit()
+
+    return jsonify(new_favorite.serialize()), 201
+
+@app.route('/favorite/people/<int:people_id>', methods=['DELETE'])
+def delete_fav_people(people_id):
+    body = request.json
+    email = body.get("email")
+    user = User.query.filter_by(email=email).one_or_none()
+    if user == None:
+        return jsonify({"msg" : "User doesn't exist"}), 404
+    
+    people = People.query.get(people_id)
+    if people == None:
+        return jsonify({"msg" : "People doesn't exist"}), 404
+    
+    favorite_delete = Favorite.query.filter_by(user_id=user.id,people_id=people.id).first()
+    if favorite_delete == None:
+        return jsonify({"msg" : "Favorite doesn't exist"}), 404
+    db.session.delete(favorite_delete)
+    db.session.commit()
+
+    return jsonify({"msg" : "Favorite successfully deleted"}), 201
+
 # this only runs if `$ python src/app.py` is executed
 if __name__ == '__main__':
     PORT = int(os.environ.get('PORT', 3000))

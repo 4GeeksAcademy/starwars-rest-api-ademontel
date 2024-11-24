@@ -44,7 +44,7 @@ class People(db.Model):
     zodiac = db.Column(db.String(100))    
 
     def __repr__(self):
-        return '<People %r>' % self.name
+        return '<People %r>' % self.id
 
     def serialize(self):
         return {
