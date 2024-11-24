@@ -36,7 +36,7 @@ def handle_invalid_usage(error):
 def sitemap():
     return generate_sitemap(app)
 
-@app.route('/user', methods=['GET'])
+@app.route('/users', methods=['GET'])
 def get_users():
     users = User.query.all()
     return jsonify([user.serialize() for user in users],), 200
@@ -48,13 +48,12 @@ def get_user_by_id(user_id):
         return jsonify({'Error':'User not found'}), 404
     return jsonify(user.serialize()), 200
 
-@app.route('/user/<int:user_id>/favorites', methods=['GET'])
-def get_favs_by_user_id(user_id):
-    user = User.query.get(user_id)
-    if not user:
-        return jsonify({'Error':'User with id {user_id} not found'}), 404
-    favorites = Favorite.query.filter_by(user_id=user_id).all()
-    return jsonify([favorite.serialize() for favorite in favorites]), 200
+@app.route('/users/favorites', methods=['GET'])
+def get_favorites():
+    favorites = Favorite.query.all()
+    if favorites == []:
+        return jsonify({"msg":"There are no favorites"}), 404
+    return jsonify([favorite.serialize() for favorite in favorites],), 200
 
 @app.route('/people', methods=['GET'])
 def get_people():
@@ -80,7 +79,8 @@ def get_planet_by_id(planet_id):
         return jsonify({'Error':'Planet not found'}), 404
     return jsonify(planet.serialize()), 200
 
-@app.route('/user/<int:user_id>/favorite/planet/<int:planet_id>', methods=['POST'])
+#Esta ruta no va asi, se le pasa el user_id en body y se toma el request. lo dejo a modo de ejemplo de lo que NO hay que hacer
+"""@app.route('/user/<int:user_id>/favorite/planet/<int:planet_id>', methods=['POST'])
 def add_fav_planet(user_id, planet_id):
     user = User.query.get(user_id)
     if not user:
@@ -92,6 +92,27 @@ def add_fav_planet(user_id, planet_id):
     
     new_favorite = Favorite(
         user_id = user_id,
+        planet_id = planet_id
+        )
+    db.session.add(new_favorite)
+    db.session.commit()
+
+    return jsonify(new_favorite.serialize()), 201
+"""
+@app.route('/favorite/planet/<int:planet_id>', methods=['POST'])
+def add_fav_planet(planet_id):
+    body = request.json
+    email = body.get("email")
+    user = User.query.filter_by(email=email).one_or_none()
+    if user == None:
+        return jsonify({"msg" : "User doesn't exist"}), 404
+    
+    planet = Planet.query.get(planet_id)
+    if planet == None:
+        return jsonify({"msg" : "Planet doesn't exist"}), 404
+    
+    new_favorite = Favorite(
+        user_id = user.id,
         planet_id = planet_id
         )
     db.session.add(new_favorite)
