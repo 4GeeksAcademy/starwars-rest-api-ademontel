@@ -112,9 +112,10 @@ def add_fav_planet(user_id, planet_id):
     return jsonify(new_favorite.serialize()), 201
 """
 @app.route('/favorite/planet/<int:planet_id>', methods=['POST'])
+@jwt_required()
 def add_fav_planet(planet_id):
-    body = request.json
-    email = body.get("email")
+
+    email = get_jwt_identity()
     user = User.query.filter_by(email=email).one_or_none()
     if user == None:
         return jsonify({"msg" : "User doesn't exist"}), 404
@@ -153,9 +154,10 @@ def delete_fav_planet(planet_id):
     return jsonify({"msg" : "Favorite successfully deleted"}), 201
 
 @app.route('/favorite/people/<int:people_id>', methods=['POST'])
+@jwt_required()
 def add_fav_people(people_id):
-    body = request.json
-    email = body.get("email")
+    
+    email = get_jwt_identity()
     user = User.query.filter_by(email=email).one_or_none()
     if user == None:
         return jsonify({"msg" : "User doesn't exist"}), 404
