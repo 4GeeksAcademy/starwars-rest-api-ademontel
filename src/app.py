@@ -9,10 +9,17 @@ from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
 from models import db, User, Planet, People, Favorite
+from flask_jwt_extended import JWTManager
+from flask_jwt_extended import create_access_token
+from flask_jwt_extended import get_jwt_identity
+from flask_jwt_extended import jwt_required
 #from models import Person
 
 app = Flask(__name__)
 app.url_map.strict_slashes = False
+
+app.config["JWT_SECRET_KEY"] = "LlaveSuperSecreta"  # Change this!
+jwt = JWTManager(app)
 
 db_url = os.getenv("DATABASE_URL")
 if db_url is not None:
@@ -49,8 +56,13 @@ def get_user_by_id(user_id):
     return jsonify(user.serialize()), 200
 
 @app.route('/users/favorites', methods=['GET'])
+@jwt_required()
 def get_favorites():
-    favorites = Favorite.query.all()
+    email = get_jwt_identity()
+    user = User.query.filter_by(email=email).one_or_none()
+
+    favorites = Favorite.query.filter_by(user_id=user.id).all()
+
     if favorites == []:
         return jsonify({"msg":"There are no favorites"}), 404
     return jsonify([favorite.serialize() for favorite in favorites],), 200
@@ -121,9 +133,9 @@ def add_fav_planet(planet_id):
     return jsonify(new_favorite.serialize()), 201
 
 @app.route('/favorite/planet/<int:planet_id>', methods=['DELETE'])
+@jwt_required()
 def delete_fav_planet(planet_id):
-    body = request.json
-    email = body.get("email")
+    email = get_jwt_identity()
     user = User.query.filter_by(email=email).one_or_none()
     if user == None:
         return jsonify({"msg" : "User doesn't exist"}), 404
@@ -162,9 +174,9 @@ def add_fav_people(people_id):
     return jsonify(new_favorite.serialize()), 201
 
 @app.route('/favorite/people/<int:people_id>', methods=['DELETE'])
+@jwt_required()
 def delete_fav_people(people_id):
-    body = request.json
-    email = body.get("email")
+    email = get_jwt_identity()
     user = User.query.filter_by(email=email).one_or_none()
     if user == None:
         return jsonify({"msg" : "User doesn't exist"}), 404
@@ -180,6 +192,31 @@ def delete_fav_people(people_id):
     db.session.commit()
 
     return jsonify({"msg" : "Favorite successfully deleted"}), 201
+
+@app.route("/login", methods=["POST"])
+
+def login():
+    body = request.json
+    email = body.get("email", None)
+    password = body.get("password", None)
+
+    user = User.query.filter_by(email=email).one_or_none()
+
+    if user == None:
+        return jsonify({"msg": "Bad email or password"}), 401
+
+    if user.password != password:
+        return jsonify({"msg": "Bad email or password"}), 401
+
+    access_token = create_access_token(identity=email)
+    return jsonify(access_token=access_token), 201
+
+@app.route("/protected", methods=["GET"])
+@jwt_required()
+def protected():
+    # Access the identity of the current user with get_jwt_identity
+    current_user = get_jwt_identity()
+    return jsonify(logged_in_as=current_user), 200
 
 # this only runs if `$ python src/app.py` is executed
 if __name__ == '__main__':
